@@ -1,26 +1,43 @@
 <template>
   <div class="items-management">
-
     <!-- Add Item Button -->
     <q-btn
-      color="primary"
-      class="q-mb-lg"
+      push
+      class="main-button q-mb-lg"
       @click="showAddItemDialog = true"
       label="Add Item"
     />
 
+    <!-- Search Input -->
+    <q-input
+      outlined
+      dense
+      v-model="searchQuery"
+      label="Search Items"
+      class="q-mb-md"
+      debounce="300"
+    />
+
     <!-- Items Table -->
-    <q-table :rows="items" :columns="columns" row-key="id" separator="cell">
+    <q-table
+      class="table"
+      :rows="filteredItems"
+      :columns="columns"
+      row-key="id"
+      separator="cell"
+    >
       <template v-slot:body-cell-actions="props">
         <q-td :props="props" class="q-gutter-x-md">
           <q-btn
+            push
             label="Update"
-            color="primary"
+            class="main-button"
             @click="openUpdateDialog(props.row)"
           />
           <q-btn
+            push
             label="Delete"
-            color="negative"
+            class="negative-button"
             @click="openDeleteDialog(props.row)"
           />
         </q-td>
@@ -191,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import {
   fetchAllItems,
@@ -249,6 +266,7 @@ const columns = [
 
 // Define reactive variables
 const items = ref([]);
+const searchQuery = ref(""); 
 const showAddItemDialog = ref(false);
 const showUpdateItemDialog = ref(false);
 const showDeleteItemDialog = ref(false);
@@ -283,8 +301,8 @@ onMounted(async () => {
 
 // Helper function to set empty inputs to null
 const cleanItem = (item) => {
-  Object.keys(item).forEach(key => {
-    if (item[key] === '') {
+  Object.keys(item).forEach((key) => {
+    if (item[key] === "") {
       item[key] = null;
     }
   });
@@ -305,6 +323,18 @@ const fetchItems = async () => {
   }
 };
 
+// Computed property to filter items based on search query
+const filteredItems = computed(() => {
+  if (!searchQuery.value) {
+    return items.value;
+  }
+  return items.value.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
 // Function to add a new item
 const addItem = async () => {
   try {
@@ -320,7 +350,6 @@ const addItem = async () => {
     $q.notify({ type: "negative", message: "Failed to add item" });
   }
 };
-
 
 // Function to open update item dialog with selected item data
 const openUpdateDialog = (item) => {
